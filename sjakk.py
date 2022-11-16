@@ -1,16 +1,7 @@
-# Ble ikke helt ferdig. Blir ferdig til demonstrasjonen
-
-#### For å kunne kjøre koden må du installere:
-#    pip install PyQt5
-#    pip install BlurWindow
-####
-
 from PyQt5 import QtCore as qc, QtGui as qg, QtWidgets as qw
 import sys
 from customQtWidgets import *
 from BlurWindow.blurWindow import blur
-
-
 
 class Main(qw.QMainWindow):
     def __init__(self):
@@ -31,17 +22,36 @@ class Main(qw.QMainWindow):
         hWnd = self.winId()
         blur(hWnd)
 
-        #### Create title bar, credit bar and main frame
+        #### Create title bar, credit bar and main frame, and status bar
         mainframe = {}
-        for i in range(1, 4):
+        for i in range(1, 5):
             if i ==2:
                 mainframe[str(i)] = myframe(self.cf, "g", f"mainframe{i}", add=True)
             else:
                 mainframe[str(i)] = myframe(self.cf, "h", f"mainframe{i}", add=True)
 
         mainframe["1"].customradius(9, 9, 0, 0),    mainframe["1"].setFixedHeight(30),  mainframe["1"].bg(0, 0, 0, 100)
-        mainframe["3"].customradius(0, 0, 9, 9),    mainframe["3"].setFixedHeight(20),  mainframe["3"].bg(0,0,0, 100)
+        mainframe["4"].customradius(0, 0, 9, 9),    mainframe["4"].setFixedHeight(20),  mainframe["4"].bg(0,0,0, 100)
         self.mainframe = mainframe
+
+        # Make status and collectors
+        mainframe["3"].setFixedHeight(40)
+        self.wcollector, self.status, self.bcollector = myframe(mainframe["3"], "g", "wc", add=True), myframe(mainframe["3"], "g", "status", add=True), myframe(mainframe["3"], "g", "bc", add=True)
+        self.wcollector.setFixedHeight(40), self.status.setFixedWidth(300), self.status.setFixedHeight(40), self.bcollector.setFixedHeight(40)
+        self.wbrick = {}
+        for i in range(1,17):
+            self.wbrick[i] = mylabel(self.wcollector, text="yeahboy")
+            if i <=8:
+                self.wcollector.lay.addWidget(self.wbrick[i], 0, i-1)
+            else:
+                self.wcollector.lay.addWidget(self.wbrick[i], 1, i-9)
+        self.bbrick = {}
+        for i in range(1, 17):
+            self.bbrick[i] = mylabel(self.bcollector, text="yeahboy")
+            if i <= 8:
+                self.bcollector.lay.addWidget(self.bbrick[i], 0, i - 1)
+            else:
+                self.bcollector.lay.addWidget(self.bbrick[i], 1, i - 9)
 
         #### Create 2 frames in the top mainframe
         topframe = {}
@@ -66,7 +76,7 @@ class Main(qw.QMainWindow):
         #### Create 4 frames in the bottom mainframe
         btmframe = {}
         for i in range(1, 5):
-            btmframe[str(i)] = myframe(mainframe["3"], "v", f"btmframe{i}", add=True)
+            btmframe[str(i)] = myframe(mainframe["4"], "v", f"btmframe{i}", add=True)
 
         btmframe["4"].setFixedWidth(20),btmframe["1"].setFixedWidth(20)
 
@@ -91,32 +101,30 @@ class Main(qw.QMainWindow):
 
         # Link some functions
         self.mainframe["1"].mouseMoveEvent = self.moveWindow
-        self.board.piece["B"][1].mouseMoveEvent = self.movePiece
         Functions.buttonconfig(self)
 
     # Make sure the window can be moved
-    def moveWindow(self,event):
+    def moveWindow(self, event):
 
-            if event.buttons() == qc.Qt.LeftButton:
+        if event.buttons() == qc.Qt.LeftButton:
+            self.move(self.pos() + event.globalPos() - self.dragPos)
+            self.dragPos = event.globalPos()
+            event.accept()
 
-                self.move(self.pos() + event.globalPos() - self.dragPos)
-                self.dragPos = event.globalPos()
-                event.accept()
+    def movePiece(self, event):
 
-    def movePiece(self,event):
+        if event.buttons() == qc.Qt.LeftButton:
+            if self.board.piece["B"][1].parent() != self.mainframe["2"]:
+                self.board.piece["B"][1].setParent(self.mainframe["2"]), self.mainframe["2"].lay.addWidget(
+                    self.board.piece["B"][1], 0, 0)
 
-            if event.buttons() == qc.Qt.LeftButton:
-                if self.board.piece["B"][1].parent() != self.mainframe["2"]:
-                    self.board.piece["B"][1].setParent(self.mainframe["2"]), self.mainframe["2"].lay.addWidget(self.board.piece["B"][1], 0, 0)
-
-                self.board.piece["B"][1].move(self.board.piece["B"][1].pos() + event.globalPos() - self.dragPos)
-                self.dragPos = event.globalPos()
-                event.accept()
+            self.board.piece["B"][1].move(self.board.piece["B"][1].pos() + event.globalPos() - self.dragPos)
+            self.dragPos = event.globalPos()
+            event.accept()
 
     # Define function every time the mouse is pressed
     def mousePressEvent(self, event):
         self.dragPos = event.globalPos()
-
 
 class Grid(myframe):
 
@@ -148,8 +156,11 @@ class Grid(myframe):
         for i in Grid.list:
             self.frame[i],   piece[i]     =      ["placeholder"],     ["placeholder"]
             for j in range(1,9):
-                self.frame[i].append(myframe(grid, "v", f"{i}{j}"))
-                piece[i].append(mylabel(self.frame[i][j], f"piece{i}{j}", add=True, align="center", size=60, color=(0,0,0,255)))
+                self.frame[i].append(myframe(grid, "g", f"{i}{j}"))
+                framename = mylabel(self.frame[i][j], text= f"   {i}{j}", size=10, color=(0,0,0,255))
+                piece[i].append(mylabel(self.frame[i][j], f"piece{i}{j}", align="center", size=60, color=(0,0,0,255)))
+
+                self.frame[i][j].lay.addWidget(piece[i][j], 2, 2)
                 grid.lay.addWidget(self.frame[i][j], 8-j, Grid.list.index(i)+1)
         self.piece = piece
 
@@ -163,6 +174,7 @@ class Grid(myframe):
             color += 1
 
         self.setBoard(piece)
+
 
     def setBoard(self, piece):
         #### Set the board:
@@ -330,7 +342,9 @@ class Grid(myframe):
 
         elif piece == "king":
 
-            if (x-x2==abs(1) or y-y2==abs(1)) and self.checkPlayer(toframe)!=player:
+            if self.checkCheck(stringto, toframe) == True:
+                return False
+            elif (x-x2==abs(1) or y-y2==abs(1)) and self.checkPlayer(toframe)!=player:
                 return True
             else:
                 return False
@@ -469,6 +483,41 @@ class Grid(myframe):
             else:
                 return False
 
+    def checkCheck(self, kingstring, king):
+        # Is the king in check?
+        for i in self.piece:
+            for j in self.piece[i]:
+                if j.text() != "wking" or j.text() != "bking":
+                    stringfrom = f'piece["{i}"][{j}]'
+                    if self.checkMove(stringfrom, j, kingstring, king) == True:
+                        return True
+
+    def checkCheckmate(self, stringfrom, fromframe):
+
+        # Find position of both kings
+        for i in self.piece:
+            for j in self.piece[i]:
+                if j.text() == "wking":
+                    wking = j
+                    wstring = f'piece["i"][j]'
+                elif j.text() == "bking":
+                    bking = j
+                    bstring = f'piece["i"][j]'
+        if self.turn%2==0:
+            stringto = wstring
+            toframe = wking
+        else:
+            stringto = bstring
+            toframe = bking
+
+
+
+        for i in self.piece:
+            for j in self.piece[i]:
+                if j.text() != "wking" or j.text() != "bking":
+                    if self.checkMove(stringfrom, fromframe, stringto, toframe) == True:
+                        return True
+
     def move(self, main, departure, destination):
 
         # Only run function if both inputs are filled
@@ -481,6 +530,24 @@ class Grid(myframe):
         fromframe  = self.piece[f"{departure[0].upper()}"][int(departure[1])]
         toframe    = self.piece[f"{destination[0].upper()}"][int(destination[1])]
 
+        # Find position of both kings
+        for i in self.piece:
+            for j in self.piece[i]:
+                if j.text() == "wking":
+                    wking = j
+                    wstring = f'piece["i"][j]'
+                elif j.text() == "bking":
+                    bking = j
+                    bstring = f'piece["i"][j]'
+        if self.turn % 2 == 0:
+            kingstring = wstring
+            king =wking
+        else:
+            kingstring = bstring
+            king = bking
+
+        #Is the king in check?
+        check = self.checkCheck(stringfrom, fromframe, kingstring, king)
         # Check if move is allowed:
         allowed = self.checkMove(stringfrom, fromframe, stringto, toframe)
 
@@ -490,6 +557,7 @@ class Grid(myframe):
             self.turn+=1
 
         main.fromentry.setText(""), main.toentry.setText(""), main.fromentry.setFocus()
+        self.checkCheck(stringfrom, fromframe)
 
 
 
@@ -516,9 +584,7 @@ class Functions(Main):
         self.fromentry.returnPressed.connect(lambda: self.board.move(self, self.fromentry.text(), self.toentry.text()))
         self.toentry.returnPressed.connect(lambda: self.board.move(self, self.fromentry.text(), self.toentry.text()))
 
-
 #### Run Aplication
-
 if __name__ == "__main__":
     app = qw.QApplication(sys.argv)
     Main = Main()

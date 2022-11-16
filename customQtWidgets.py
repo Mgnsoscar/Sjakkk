@@ -440,6 +440,8 @@ class mylabel(qw.QLabel):
 
         qw.QLabel.__init__(self, Master)
 
+        self.Master = Master
+
         #### I want my class to have a custom font family called Roboto. In the following code i
         #### iterate over the resource folder to upload these to the QPyQt5 font local database
 
@@ -490,6 +492,7 @@ class mylabel(qw.QLabel):
 
         # Set the stylesheet
         self.updateStylesheet()
+
 
     # Update the stylesheet
     def updateStylesheet(self):
@@ -563,11 +566,10 @@ class mylabel(qw.QLabel):
             self.setGraphicsEffect(blureffect)
         if state == False:
             self.setGraphicsEffect(None)
-    def mousePressEvent(self, event):
-        pass
-    def mousePressEvent(self, event):
-        print("yo")
-        self.dragPos = event.globalPos()
+
+
+
+
 
 class myinput(qw.QLineEdit):
 
